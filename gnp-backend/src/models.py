@@ -18,6 +18,7 @@ class Document(Base): # For DocumentVault
     client_name = Column(String)
     category = Column(String)
     upload_date = Column(DateTime, default=datetime.datetime.utcnow)
+    expiry_date = Column(DateTime, nullable=True)
 
 class Task(Base): # For ERPDashboard
     __tablename__ = "tasks"
@@ -44,3 +45,12 @@ class Invoice(Base):
     amount = Column(Float)
     status = Column(String, default="Draft")
     date = Column(DateTime, default=datetime.datetime.utcnow)
+
+class Attendance(Base):
+    __tablename__ = "attendance"
+    id = Column(Integer, primary_key=True)
+    staff_name = Column(String)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    location_name = Column(String)

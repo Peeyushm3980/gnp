@@ -75,3 +75,14 @@ class Invoice(InvoiceBase):
     id: int
     date: datetime
     model_config = ConfigDict(from_attributes=True)
+
+class AttendanceCreate(BaseModel):
+    staff_name: str
+    latitude: float
+    longitude: float
+    location_name: Optional[str] = "Unknown"
+
+class Attendance(AttendanceCreate):
+    id: int
+    timestamp: datetime
+    model_config = ConfigDict(from_attributes=True)

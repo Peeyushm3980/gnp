@@ -1,3 +1,4 @@
+import datetime
 from typing import List
 
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
@@ -153,6 +154,25 @@ async def get_file(document_id: int, action: str = "view", db: AsyncSession = De
         filename=db_doc.filename,
         content_disposition_type=disposition
     )
+
+@app.post("/api/attendance", response_model=schemas.Attendance)
+async def mark_attendance(data: schemas.AttendanceCreate, db: AsyncSession = Depends(get_db)):
+    new_entry = models.Attendance(**data.dict())
+    db.add(new_entry)
+    await db.commit()
+    await db.refresh(new_entry)
+    return new_entry
+
+# --- COMPLIANCE EXPIRY API ---
+@app.get("/api/compliance/expiring")
+async def get_expiring_docs(db: AsyncSession = Depends(get_db)):
+    # Get docs expiring in the next 90 days
+    today = datetime.datetime.utcnow()
+    limit = today + datetime.timedelta(days=90)
+    result = await db.execute(
+        select(models.Document).filter(models.Document.expiry_date <= limit)
+    )
+    return result.scalars().all()
 
 if __name__ == "__main__":
     import uvicorn
