@@ -1,0 +1,38 @@
+# --- General ---
+.DS_Store
+.env
+*.log
+
+# --- Frontend (React/Node) ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vscode/
+
+# --- Backend (Python/FastAPI) ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+env/
+ENV/
+.venv/
+
+# --- Local Storage (Document Vault) ---
+# We ignore the actual files uploaded but keep the folder
+gnp-backend/uploads/*
+!gnp-backend/uploads/.gitkeep
+
+# --- Database ---
+# If you ever use SQLite for testing or have local pg dumps
+*.sql
+*.sqlite3
+
+# --- IDEs and Editors ---
+.idea/
+.project
+.settings
+*.sublime-project
+*.sublime-workspace
