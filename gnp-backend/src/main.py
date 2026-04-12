@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone, timedelta
 from typing import List
 
 from fastapi import FastAPI, Depends, Form, UploadFile, File, HTTPException
@@ -43,7 +43,7 @@ async def upload_document(
     client_name: str, 
     category: str, 
     file: UploadFile = File(...), 
-    expiry_date: str = Form(None),
+    expiry_date: str = None,
     db: AsyncSession = Depends(get_db)
 ):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
@@ -51,8 +51,11 @@ async def upload_document(
         shutil.copyfileobj(file.file, buffer)
 
     expiry_dt = None
-    if expiry_date:
-        expiry_dt = datetime.strptime(expiry_date, '%Y-%m-%d')
+    if expiry_date and expiry_date.strip() and expiry_date != 'null':
+        try:
+            expiry_dt = datetime.strptime(expiry_date, '%Y-%m-%d')
+        except ValueError:
+            expiry_dt = None
     
     new_doc = models.Document(
         filename=file.filename, 
@@ -184,12 +187,21 @@ async def mark_attendance(data: schemas.AttendanceCreate, db: AsyncSession = Dep
 # --- COMPLIANCE EXPIRY API ---
 @app.get("/api/compliance/expiring")
 async def get_expiring_docs(db: AsyncSession = Depends(get_db)):
-    # Get docs expiring in the next 90 days
-    today = datetime.datetime.utcnow()
-    limit = today + datetime.timedelta(days=90)
-    result = await db.execute(
-        select(models.Document).filter(models.Document.expiry_date <= limit)
-    )
+    # 1. Get today's date but set time to 00:00:00
+    # This ensures documents expiring today are included
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # 2. Set the 90-day future window
+    limit = today_start + timedelta(days=90)
+    
+    # 3. Query: Expiry must be >= start of today and <= limit
+    query = select(models.Document).where(
+        models.Document.expiry_date >= today_start,
+        models.Document.expiry_date <= limit
+    ).order_by(models.Document.expiry_date.asc())
+    
+    result = await db.execute(query)
     return result.scalars().all()
 
 @app.patch("/api/tickets/{ticket_id}", response_model=schemas.Ticket)
@@ -223,17 +235,21 @@ async def get_latest_locations(db: AsyncSession = Depends(get_db)):
 
 @app.get("/api/compliance/expiring", response_model=list[schemas.DocumentRead])
 async def get_expiring_compliance(db: AsyncSession = Depends(get_db)):
-    today = datetime.utcnow()
-    ninety_days_from_now = today + datetime.timedelta(days=90)
+    today = datetime.now(timezone.utc).replace(tzinfo=None)
+    limit = today + timedelta(days=90)
     
-    # Query documents expiring between today and the next 90 days
+    # 3. Use the naive objects in your query
     query = select(models.Document).where(
         models.Document.expiry_date >= today,
-        models.Document.expiry_date <= ninety_days_from_now
-    ).order_by(models.Document.expiry_date.asc())
+        models.Document.expiry_date <= limit
+    )
     
-    result = await db.execute(query)
-    return result.scalars().all()
+    try:
+        result = await db.execute(query)
+        return result.scalars().all()
+    except Exception as e:
+        print(f"Database Query Error: {e}")
+        raise HTTPException(status_code=500, detail="Database comparison failed")
 
 if __name__ == "__main__":
     import uvicorn
