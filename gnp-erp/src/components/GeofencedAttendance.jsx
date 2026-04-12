@@ -26,8 +26,10 @@ const GeofencedAttendance = () => {
       <button 
         onClick={handleCheckIn}
         disabled={status === 'success'}
-        className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
-          status === 'success' ? 'bg-green-100 text-green-700' : 'bg-blue-700 text-white hover:bg-blue-800'
+        className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg ${
+          status === 'success' 
+            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-none' 
+            : 'bg-[#f59e0b] text-white hover:bg-[#d97706] hover:shadow-amber-200'
         }`}
       >
         {status === 'idle' && "Check-in at Client Site"}
