@@ -79,7 +79,8 @@ const ERPDashboard = () => {
         </div>
         <button 
           onClick={() => setIsEngageOpen(true)}
-          className="bg-blue-700 text-white px-8 py-3 rounded-2xl font-bold shadow-blue-200 shadow-xl hover:bg-blue-800 transition-all hover:-translate-y-0.5"
+          style={{ backgroundColor: 'var(--primary)' }}
+          className="text-white px-6 py-3 rounded-2xl font-bold hover:opacity-90 transition-all shadow-lg"
         >
           + New Engagement
         </button>
@@ -143,6 +144,7 @@ const ERPDashboard = () => {
                       <button 
                         onClick={() => { setSelectedTask(task); setIsReassignOpen(true); }}
                         className="text-blue-700 hover:text-blue-800 text-xs font-bold inline-flex items-center gap-1"
+                        style={{ backgroundColor: 'var(--primary)' }}
                       >
                         <ArrowRightLeft size={14} /> Reassign
                       </button>
@@ -165,6 +167,7 @@ const ERPDashboard = () => {
             <button 
               onClick={handleAttendance}
               disabled={attendanceStatus === 'success'}
+              style={{ backgroundColor: 'var(--primary)' }}
               className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
                 attendanceStatus === 'success' ? 'bg-green-100 text-green-700' : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200'
               }`}
@@ -177,7 +180,7 @@ const ERPDashboard = () => {
 
           {/* DSC/Compliance Tracker */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-5 bg-slate-900 text-white font-bold text-sm flex justify-between items-center">
+            <div className="p-5 bg-slate-900 text-white font-bold text-sm flex justify-between items-center" style={{ backgroundColor: 'var(--primary)' }}>
               <span>Compliance Expiry</span>
               <Bell size={16} className="text-orange-400 animate-pulse" />
             </div>

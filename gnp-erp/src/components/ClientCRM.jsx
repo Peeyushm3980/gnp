@@ -40,6 +40,7 @@ const ClientCRM = () => {
         <button 
           onClick={() => setIsModalOpen(true)}
           className="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-lg hover:bg-blue-800 transition-all text-sm flex items-center gap-2"
+          style={{ backgroundColor: 'var(--primary)' }}
         >
           <UserPlus size={18}/> + Add New Lead
         </button>

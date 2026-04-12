@@ -27,6 +27,36 @@
   --border-color: #334155;
 }
 
+[data-theme='sunset'] {
+  --primary: #ea580c; /* orange-600 */
+  --primary-light: #fff7ed; /* orange-50 */
+  --bg-main: #fffaf5; 
+  --bg-card: #ffffff;
+  --text-main: #7c2d12;
+  --border-color: #ffedd5;
+}
+
+/* Royal Purple Theme - Sophisticated & Elegant */
+[data-theme='royal'] {
+  --primary: #7c3aed; /* purple-600 */
+  --primary-light: #f5f3ff; /* purple-50 */
+  --bg-main: #fafaff;
+  --bg-card: #ffffff;
+  --text-main: #4c1d95;
+  --border-color: #ede9fe;
+}
+
+button.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+button.btn-ghost {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
 /* Global resets using your variables */
 body {
   @apply bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-300;

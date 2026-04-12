@@ -26,9 +26,8 @@ const GeofencedAttendance = () => {
       <button 
         onClick={handleCheckIn}
         disabled={status === 'success'}
-        className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
-          status === 'success' ? 'bg-green-100 text-green-700' : 'bg-blue-700 text-white hover:bg-blue-800'
-        }`}
+        style={{ backgroundColor: 'var(--primary)' }}
+        className="text-white px-6 py-3 rounded-2xl font-bold hover:opacity-90 transition-all shadow-lg"
       >
         {status === 'idle' && "Check-in at Client Site"}
         {status === 'locating' && "Verifying Location..."}

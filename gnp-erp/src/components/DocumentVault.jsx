@@ -32,7 +32,8 @@ const DocumentVault = () => {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium shadow-lg hover:bg-blue-800 transition-all"
+          style={{ backgroundColor: 'var(--primary)' }}
+          className="text-white px-6 py-3 rounded-2xl font-bold hover:opacity-90 transition-all shadow-lg"
         >
           + Upload File
         </button>
@@ -45,7 +46,7 @@ const DocumentVault = () => {
       />
 
       {/* STORAGE WIDGET */}
-      <div className="bg-blue-900 text-white p-6 rounded-3xl mb-8 flex items-center gap-6 shadow-xl max-w-md">
+      <div className="bg-blue-900 text-white p-6 rounded-3xl mb-8 flex items-center gap-6 shadow-xl max-w-md" style={{ backgroundColor: 'var(--primary)' }}>
         <HardDrive size={32} className="opacity-50" />
         <div className="flex-1">
           <p className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-2">Local Storage Status</p>

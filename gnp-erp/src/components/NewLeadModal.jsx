@@ -85,6 +85,7 @@ const NewLeadModal = ({ isOpen, onClose, onLeadAdded }) => {
           <button 
             type="submit"
             className="w-full bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-800 transition-all mt-4"
+            style={{ backgroundColor: 'var(--primary)' }}
           >
             Create Lead
           </button>

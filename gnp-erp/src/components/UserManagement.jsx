@@ -58,6 +58,7 @@ const UserManagement = () => {
           </button>
           <button 
             onClick={() => setIsAddModalOpen(true)}
+            style={{ backgroundColor: 'var(--primary)' }}
             className="bg-blue-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-blue-100 hover:bg-blue-800 transition-all"
             >
             <UserPlus size={20} /> Add New Staff

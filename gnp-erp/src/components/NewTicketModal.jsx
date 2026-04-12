@@ -75,6 +75,7 @@ const NewTicketModal = ({ isOpen, onClose, onTicketAdded }) => {
 
           <button 
             type="submit"
+            style={{ backgroundColor: 'var(--primary)' }}
             className="w-full bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-800 transition-all mt-4"
           >
             Log Ticket

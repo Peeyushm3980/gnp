@@ -96,6 +96,7 @@ const AddStaffModal = ({ isOpen, onClose, onStaffAdded }) => {
 
           <button 
             disabled={loading}
+            style={{ backgroundColor: 'var(--primary)' }}
             className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95 mt-4"
           >
             {loading ? "Creating Account..." : "Confirm & Add to Firm"}
