@@ -251,6 +251,69 @@ async def get_expiring_compliance(db: AsyncSession = Depends(get_db)):
         print(f"Database Query Error: {e}")
         raise HTTPException(status_code=500, detail="Database comparison failed")
 
+@app.post("/api/login")
+async def login(data: dict, db: AsyncSession = Depends(get_db)):
+    username = data.get("username")
+    password = data.get("password")
+    
+    # Query user from DB
+    result = await db.execute(select(models.User).where(models.User.username == username))
+    user = result.scalars().first()
+    
+    # Simple verification (For demo: in production use passlib.hash)
+    if not user or user.password_hash != password:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    return {
+        "id": user.id,
+        "username": user.username,
+        "role": user.role
+    }
+
+@app.get("/api/users")
+async def get_users(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.User).order_by(models.User.username))
+    users = result.scalars().all()
+    # Return users without exposing password hashes
+    return [{"id": u.id, "username": u.username, "role": u.role} for u in users]
+
+# 2. DELETE USER
+@app.delete("/api/users/{user_id}")
+async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.User).where(models.User.id == user_id))
+    user = result.scalars().first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    await db.delete(user)
+    await db.commit()
+    return {"message": f"User {user.username} removed from firm access"}
+
+@app.post("/api/users")
+async def create_user(data: dict, db: AsyncSession = Depends(get_db)):
+    username = data.get("username")
+    password = data.get("password")
+    role = data.get("role", "user")
+
+    # 1. Check if user already exists
+    existing_user = await db.execute(select(models.User).where(models.User.username == username))
+    if existing_user.scalars().first():
+        raise HTTPException(status_code=400, detail="Username already registered")
+
+    # 2. Create new user
+    new_user = models.User(
+        username=username,
+        password_hash=password, # In production, use pwd_context.hash(password)
+        role=role
+    )
+    
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    
+    return {"message": f"Staff member {username} added successfully"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)

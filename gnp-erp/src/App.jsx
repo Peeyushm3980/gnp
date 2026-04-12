@@ -5,11 +5,18 @@ import SupportTickets from './components/SupportTickets';
 import ClientCRM from './components/ClientCRM';
 import FirmAccounts from './components/FirmAccounts';
 import StaffTracker from './components/StaffTracker';
-import { LayoutDashboard, FolderOpen, TicketCheck, Users, Handshake, FilePieChart, Menu, X, MapPin } from 'lucide-react';
+import Login from './components/Login';
+import UserManagement from './components/UserManagement';
+import { LayoutDashboard, FolderOpen, TicketCheck, Users, Handshake, FilePieChart, Menu, X, MapPin , LogOut} from 'lucide-react';
 
 function App() {
+  const [user, setUser] = useState(null);  
   const [currentPage, setCurrentPage] = useState('Projects');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  if (!user) {
+    return <Login onLoginSuccess={(userData) => setUser(userData)} />;
+  }
 
   const menuItems = [
     { name: 'Projects', icon: LayoutDashboard },
@@ -18,8 +25,21 @@ function App() {
     { name: 'HR/Payroll', icon: Users },
     { name: 'CRM', icon: Handshake },
     { name: 'Accounts', icon: FilePieChart },
-    { name: 'Staff Tracker', icon: MapPin }
+    { name: 'Staff Tracker', icon: MapPin },
+    { name: 'Users', icon: Users, adminOnly: true }
   ];
+
+  const handleLogout = () => {
+    // 1. Clear state
+    setUser(null);
+    setCurrentPage('Projects');
+    
+    // 2. Clear storage (if you implemented persistent login)
+    localStorage.removeItem('user');
+    
+    // 3. Optional: Notify backend if using sessions
+    // api.post('/logout'); 
+  };
 
   const renderPage = () => {
     switch(currentPage) {
@@ -29,6 +49,7 @@ function App() {
       case 'CRM': return <ClientCRM />;
       case 'Accounts': return <FirmAccounts />;
       case 'Staff Tracker': return <StaffTracker />;
+      case 'Users': return <UserManagement />;
       default: return <div className="p-20 text-center text-slate-400">Under Development</div>;
     }
   };
@@ -72,6 +93,15 @@ function App() {
             </button>
           ))}
         </nav>
+        <div className="mt-auto pt-6 border-t border-slate-100">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-all font-bold"
+          >
+            <LogOut size={20} />
+            <span className="text-sm">Sign Out</span>
+          </button>
+        </div>
       </aside>
 
       {/* MAIN VIEWPORT */}

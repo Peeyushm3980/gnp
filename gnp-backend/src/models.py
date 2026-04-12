@@ -2,6 +2,13 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Tex
 from database import Base
 import datetime
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    password_hash = Column(String) # Never store plain text!
+    role = Column(String, default="user") # "admin" or "user"
+    
 class ClientLead(Base): # For ClientCRM
     __tablename__ = "leads"
     id = Column(Integer, primary_key=True, index=True)
