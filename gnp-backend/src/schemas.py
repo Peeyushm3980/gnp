@@ -29,6 +29,17 @@ class TicketBase(BaseModel):
     priority: str
     status: str = "Open"
 
+class DocumentRead(BaseModel):
+    id: int
+    filename: str
+    client_name: str
+    client_phone: Optional[str] = None
+    expiry_date: datetime
+    category: str
+    
+    class Config:
+        from_attributes = True
+
 # --- CREATE SCHEMAS ---
 # These are used when receiving data from the React frontend (POST requests)
 

@@ -28,7 +28,7 @@ function App() {
       case 'Tickets': return <SupportTickets />;
       case 'CRM': return <ClientCRM />;
       case 'Accounts': return <FirmAccounts />;
-      case 'Tracker': return <StaffTracker />;
+      case 'Staff Tracker': return <StaffTracker />;
       default: return <div className="p-20 text-center text-slate-400">Under Development</div>;
     }
   };

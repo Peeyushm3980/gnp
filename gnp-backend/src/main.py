@@ -1,7 +1,7 @@
 import datetime
 from typing import List
 
-from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
+from fastapi import FastAPI, Depends, Form, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,16 +43,22 @@ async def upload_document(
     client_name: str, 
     category: str, 
     file: UploadFile = File(...), 
+    expiry_date: str = Form(None),
     db: AsyncSession = Depends(get_db)
 ):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+
+    expiry_dt = None
+    if expiry_date:
+        expiry_dt = datetime.strptime(expiry_date, '%Y-%m-%d')
     
     new_doc = models.Document(
         filename=file.filename, 
         file_path=file_path, 
         client_name=client_name, 
+        expiry_date=expiry_dt,
         category=category
     )
     db.add(new_doc)
@@ -214,6 +220,20 @@ async def get_latest_locations(db: AsyncSession = Depends(get_db)):
     # Convert rows to dictionaries for JSON response
     rows = result.fetchall()
     return [dict(row._mapping) for row in rows]
+
+@app.get("/api/compliance/expiring", response_model=list[schemas.DocumentRead])
+async def get_expiring_compliance(db: AsyncSession = Depends(get_db)):
+    today = datetime.utcnow()
+    ninety_days_from_now = today + datetime.timedelta(days=90)
+    
+    # Query documents expiring between today and the next 90 days
+    query = select(models.Document).where(
+        models.Document.expiry_date >= today,
+        models.Document.expiry_date <= ninety_days_from_now
+    ).order_by(models.Document.expiry_date.asc())
+    
+    result = await db.execute(query)
+    return result.scalars().all()
 
 if __name__ == "__main__":
     import uvicorn

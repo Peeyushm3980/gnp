@@ -2,12 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, AlertCircle, ArrowRightLeft, 
   Clock, CheckCircle2, TrendingUp, MapPin, 
-  ExternalLink, Bell, CheckCircle, FileWarning
+  ExternalLink, Bell, CheckCircle, FileWarning,
+  MessageCircle 
 } from 'lucide-react';
 import api from '../api';
 import NewEngagementModal from './NewEngagementModal';
 import ReassignModal from './ReassignModal';
 import GeofencedAttendance from './GeofencedAttendance';
+
+// --- WHATSAPP HELPER ---
+const sendWhatsAppNotification = (clientPhone, clientName, documentName, expiryDate) => {
+  const phone = clientPhone || "919876543210"; 
+  const cleanPhone = phone.replace(/\D/g, '');
+  const finalPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
+
+  const message = `Dear ${clientName}, this is a reminder from G&P Associates. Your ${documentName} is expiring on ${expiryDate}. Please provide the updated documents to avoid any filing delays.`;
+
+  const url = `https://wa.me/${finalPhone}?text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank');
+};
 
 const ERPDashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -15,7 +28,6 @@ const ERPDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [attendanceStatus, setAttendanceStatus] = useState('idle');
   
-  // Modal States
   const [isEngageOpen, setIsEngageOpen] = useState(false);
   const [isReassignOpen, setIsReassignOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -54,7 +66,7 @@ const ERPDashboard = () => {
     }, () => setAttendanceStatus('denied'));
   };
 
-  if (loading) return <div className="p-10 text-slate-500 animate-pulse">Synchronizing G&P ERP Data...</div>;
+  if (loading) return <div className="p-10 text-slate-500 animate-pulse text-center font-bold">Synchronizing G&P ERP Data...</div>;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-700">
@@ -63,13 +75,13 @@ const ERPDashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Partner's Command Center</h1>
-          <p className="text-slate-500">G&P Firm Operations • April 2026</p>
+          <p className="text-slate-500 text-sm">G&P Firm Operations • April 2026</p>
         </div>
         <button 
           onClick={() => setIsEngageOpen(true)}
           className="bg-blue-700 text-white px-8 py-3 rounded-2xl font-bold shadow-blue-200 shadow-xl hover:bg-blue-800 transition-all hover:-translate-y-0.5"
         >
-          + New Client Engagement
+          + New Engagement
         </button>
       </div>
 
@@ -84,43 +96,24 @@ const ERPDashboard = () => {
         <div className="lg:col-span-1">
           <GeofencedAttendance />
         </div>
-        
-        {/* Attendance Widget */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Digital Register</span>
-            <MapPin size={16} className="text-blue-600" />
-          </div>
-          <button 
-            onClick={handleAttendance}
-            disabled={attendanceStatus === 'success'}
-            className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
-              attendanceStatus === 'success' ? 'bg-green-100 text-green-700' : 'bg-slate-900 text-white hover:bg-slate-800'
-            }`}
-          >
-            {attendanceStatus === 'idle' && "Mark Site Attendance"}
-            {attendanceStatus === 'locating' && "Verifying GPS..."}
-            {attendanceStatus === 'success' && "Checked In"}
-          </button>
-        </div>
       </div>
 
-      {/* --- MIDDLE ROW: WORKFLOW & COMPLIANCE --- */}
+      {/* --- MIDDLE ROW --- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Task Table (2/3 Width) */}
-        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+        {/* Task Table */}
+        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden h-fit">
+          <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
             <h3 className="font-bold text-slate-800">Operational Continuity</h3>
-            <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-bold uppercase">Real-time</span>
+            <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-bold uppercase tracking-widest">Real-time</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-slate-50/50 text-[10px] uppercase text-slate-400 font-bold">
+              <thead className="bg-slate-50/50 text-[10px] uppercase text-slate-400 font-bold tracking-widest">
                 <tr>
                   <th className="px-6 py-4">Client / Service</th>
-                  <th className="px-6 py-4">Current Assignee</th>
-                  <th className="px-6 py-4">Handover Status</th>
+                  <th className="px-6 py-4">Assignee</th>
+                  <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4"></th>
                 </tr>
               </thead>
@@ -140,8 +133,8 @@ const ERPDashboard = () => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <span className={`px-2 py-1 rounded text-[10px] font-bold ${
-                        task.assigned_to.includes('Leave') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                      <span className={`px-2 py-1 rounded text-[10px] font-bold border ${
+                        task.assigned_to.includes('Leave') ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'
                       }`}>
                         {task.assigned_to.includes('Leave') ? 'ACTION REQUIRED' : 'ON TRACK'}
                       </span>
@@ -149,7 +142,7 @@ const ERPDashboard = () => {
                     <td className="px-6 py-5 text-right">
                       <button 
                         onClick={() => { setSelectedTask(task); setIsReassignOpen(true); }}
-                        className="text-blue-700 hover:text-blue-800 text-xs font-bold flex items-center gap-1 ml-auto"
+                        className="text-blue-700 hover:text-blue-800 text-xs font-bold inline-flex items-center gap-1"
                       >
                         <ArrowRightLeft size={14} /> Reassign
                       </button>
@@ -161,35 +154,71 @@ const ERPDashboard = () => {
           </div>
         </div>
 
-        {/* Expiry & Portals (1/3 Width) */}
+        {/* Side Panels */}
         <div className="space-y-6">
+          {/* Attendance Widget (Original Logic) */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-4">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Digital Register</span>
+              <MapPin size={16} className="text-blue-600" />
+            </div>
+            <button 
+              onClick={handleAttendance}
+              disabled={attendanceStatus === 'success'}
+              className={`w-full py-3 rounded-xl font-bold text-sm transition-all ${
+                attendanceStatus === 'success' ? 'bg-green-100 text-green-700' : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200'
+              }`}
+            >
+              {attendanceStatus === 'idle' && "Mark Site Attendance"}
+              {attendanceStatus === 'locating' && "Verifying GPS..."}
+              {attendanceStatus === 'success' && "Checked In"}
+            </button>
+          </div>
+
           {/* DSC/Compliance Tracker */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-5 bg-slate-900 text-white font-bold text-sm flex justify-between">
-              DSC & Compliance Expiry
-              <Bell size={16} className="text-orange-400 animate-bounce" />
+            <div className="p-5 bg-slate-900 text-white font-bold text-sm flex justify-between items-center">
+              <span>Compliance Expiry</span>
+              <Bell size={16} className="text-orange-400 animate-pulse" />
             </div>
-            <div className="p-2 divide-y divide-slate-50">
+            <div className="p-2 divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
               {expiringDocs.length > 0 ? expiringDocs.map(doc => (
-                <div key={doc.id} className="p-4 flex justify-between items-center">
+                <div key={doc.id} className="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors rounded-2xl">
                   <div>
                     <div className="text-xs font-bold text-slate-800">{doc.filename}</div>
-                    <div className="text-[10px] text-slate-400">{doc.client_name}</div>
+                    <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400" /> {doc.client_name}
+                    </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs font-bold text-red-600">{new Date(doc.expiry_date).toLocaleDateString()}</div>
-                    <button className="text-[9px] font-bold text-blue-600 uppercase tracking-tighter hover:underline">Notify</button>
+                    <div className="text-xs font-bold text-red-600">
+                      {new Date(doc.expiry_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                    </div>
+                    <button 
+                      onClick={() => sendWhatsAppNotification(
+                        doc.client_phone, 
+                        doc.client_name, 
+                        doc.filename, 
+                        new Date(doc.expiry_date).toLocaleDateString()
+                      )}
+                      className="text-[9px] font-bold text-green-600 uppercase mt-1 flex items-center justify-end gap-1 hover:underline"
+                    >
+                      <MessageCircle size={10} /> Notify WA
+                    </button>
                   </div>
                 </div>
               )) : (
-                <div className="p-8 text-center text-slate-400 text-xs italic">No immediate expiries detected</div>
+                <div className="p-10 text-center">
+                  <CheckCircle size={24} className="text-green-500 mx-auto mb-2 opacity-20" />
+                  <p className="text-slate-400 text-xs italic">All compliance up to date</p>
+                </div>
               )}
             </div>
           </div>
 
           {/* Quick Portal Links */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Govt Portal Quick-Launch</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Govt Portals</h3>
             <div className="grid grid-cols-2 gap-3">
               <PortalLink name="Income Tax" url="https://eportal.incometax.gov.in" />
               <PortalLink name="GST Portal" url="https://www.gst.gov.in" />
@@ -200,16 +229,14 @@ const ERPDashboard = () => {
         </div>
       </div>
 
-      {/* --- MODALS --- */}
       <NewEngagementModal isOpen={isEngageOpen} onClose={() => setIsEngageOpen(false)} onTaskAdded={fetchDashboardData} />
       <ReassignModal isOpen={isReassignOpen} task={selectedTask} onClose={() => setIsReassignOpen(false)} onTaskUpdated={fetchDashboardData} />
     </div>
   );
 };
 
-// Helper Components
 const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group">
+  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-blue-200 transition-all">
     <div className={`absolute top-0 right-0 p-4 ${color} text-white rounded-bl-3xl opacity-10 group-hover:opacity-20 transition-all`}>
       {icon}
     </div>
@@ -223,10 +250,10 @@ const PortalLink = ({ name, url }) => (
     href={url} 
     target="_blank" 
     rel="noreferrer"
-    className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-all group"
+    className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-all"
   >
-    <span className="text-[11px] font-bold text-slate-600 group-hover:text-blue-700">{name}</span>
-    <ExternalLink size={12} className="text-slate-300 group-hover:text-blue-400" />
+    <span className="text-[11px] font-bold text-slate-600">{name}</span>
+    <ExternalLink size={12} className="text-slate-300" />
   </a>
 );
 
