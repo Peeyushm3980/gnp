@@ -12,7 +12,7 @@ import GeofencedAttendance from './GeofencedAttendance';
 
 // --- WHATSAPP HELPER ---
 const sendWhatsAppNotification = (clientPhone, clientName, documentName, expiryDate) => {
-  const phone = clientPhone || "919876543210"; 
+  const phone = clientPhone || "917838722266"; 
   const cleanPhone = phone.replace(/\D/g, '');
   const finalPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 

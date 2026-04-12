@@ -35,6 +35,7 @@ class DocumentRead(BaseModel):
     client_name: str
     client_phone: Optional[str] = None
     expiry_date: datetime
+    client_phone: Optional[str] = None
     category: str
     
     class Config:

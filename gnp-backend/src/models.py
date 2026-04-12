@@ -23,6 +23,7 @@ class Document(Base): # For DocumentVault
     filename = Column(String)
     file_path = Column(String) # Path in local file system
     client_name = Column(String)
+    client_phone = Column(String)
     category = Column(String)
     upload_date = Column(DateTime, default=datetime.datetime.utcnow)
     expiry_date = Column(DateTime, nullable=True)
