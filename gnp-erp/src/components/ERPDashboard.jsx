@@ -144,7 +144,7 @@ const ERPDashboard = () => {
                       <button 
                         onClick={() => { setSelectedTask(task); setIsReassignOpen(true); }}
                         className="text-blue-700 hover:text-blue-800 text-xs font-bold inline-flex items-center gap-1"
-                        style={{ backgroundColor: 'var(--primary)' }}
+                        
                       >
                         <ArrowRightLeft size={14} /> Reassign
                       </button>
