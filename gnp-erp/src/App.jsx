@@ -4,7 +4,8 @@ import DocumentVault from './components/DocumentVault';
 import SupportTickets from './components/SupportTickets';
 import ClientCRM from './components/ClientCRM';
 import FirmAccounts from './components/FirmAccounts';
-import { LayoutDashboard, FolderOpen, TicketCheck, Users, Handshake, FilePieChart, Menu, X } from 'lucide-react';
+import StaffTracker from './components/StaffTracker';
+import { LayoutDashboard, FolderOpen, TicketCheck, Users, Handshake, FilePieChart, Menu, X, MapPin } from 'lucide-react';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('Projects');
@@ -17,6 +18,7 @@ function App() {
     { name: 'HR/Payroll', icon: Users },
     { name: 'CRM', icon: Handshake },
     { name: 'Accounts', icon: FilePieChart },
+    { name: 'Staff Tracker', icon: MapPin }
   ];
 
   const renderPage = () => {
@@ -26,6 +28,7 @@ function App() {
       case 'Tickets': return <SupportTickets />;
       case 'CRM': return <ClientCRM />;
       case 'Accounts': return <FirmAccounts />;
+      case 'Tracker': return <StaffTracker />;
       default: return <div className="p-20 text-center text-slate-400">Under Development</div>;
     }
   };

@@ -27,6 +27,7 @@ class TicketBase(BaseModel):
     subject: str
     client: str
     priority: str
+    status: str = "Open"
 
 # --- CREATE SCHEMAS ---
 # These are used when receiving data from the React frontend (POST requests)

@@ -35,6 +35,7 @@ class Ticket(Base): # For SupportTickets
     subject = Column(String)
     client = Column(String)
     priority = Column(String)
+    status = Column(String, default="Open")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 # Add this to models.py if not already there

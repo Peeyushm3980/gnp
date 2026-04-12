@@ -3,6 +3,7 @@ from typing import List
 
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 import os
@@ -65,12 +66,23 @@ async def get_tasks(db: AsyncSession = Depends(get_db)):
     return result.scalars().all()
 
 # --- SUPPORT TICKETS API ---
-@app.post("/api/tickets")
+@app.post("/api/tickets", response_model=schemas.Ticket)
 async def create_ticket(ticket: schemas.TicketCreate, db: AsyncSession = Depends(get_db)):
-    db_ticket = models.Ticket(**ticket.dict())
-    db.add(db_ticket)
-    await db.commit()
-    return db_ticket
+    # Use .model_dump() instead of .dict() for Pydantic V2
+    # This converts the Pydantic object into a clean Python dictionary
+    ticket_data = ticket.model_dump() 
+    
+    new_ticket = models.Ticket(**ticket_data)
+    
+    db.add(new_ticket)
+    try:
+        await db.commit()
+        await db.refresh(new_ticket)
+        return new_ticket
+    except Exception as e:
+        await db.rollback()
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Database insertion failed")
 
 @app.post("/api/leads", response_model=schemas.ClientLead)
 async def create_lead(lead: schemas.ClientLeadCreate, db: AsyncSession = Depends(get_db)):
@@ -173,6 +185,35 @@ async def get_expiring_docs(db: AsyncSession = Depends(get_db)):
         select(models.Document).filter(models.Document.expiry_date <= limit)
     )
     return result.scalars().all()
+
+@app.patch("/api/tickets/{ticket_id}", response_model=schemas.Ticket)
+async def update_ticket_status(ticket_id: int, payload: dict, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Ticket).filter(models.Ticket.id == ticket_id))
+    db_ticket = result.scalar_one_or_none()
+    
+    if not db_ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    # Update status if provided in the body (e.g., {"status": "Resolved"})
+    if "status" in payload:
+        db_ticket.status = payload["status"]
+        
+    await db.commit()
+    await db.refresh(db_ticket)
+    return db_ticket
+
+@app.get("/api/attendance/latest")
+async def get_latest_locations(db: AsyncSession = Depends(get_db)):
+    # SQL logic: Get the latest record per staff member based on timestamp
+    query = text("""
+        SELECT DISTINCT ON (staff_name) *
+        FROM attendance
+        ORDER BY staff_name, timestamp DESC
+    """)
+    result = await db.execute(query)
+    # Convert rows to dictionaries for JSON response
+    rows = result.fetchall()
+    return [dict(row._mapping) for row in rows]
 
 if __name__ == "__main__":
     import uvicorn

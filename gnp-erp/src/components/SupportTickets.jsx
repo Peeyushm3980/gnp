@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Clock, Filter, Plus, ArrowRight } from 'lucide-react';
+import { X, CheckCircle, CheckCircle2, User, MessageSquare, Clock, Filter, Plus, ArrowRight } from 'lucide-react';
 import api from '../api';
 import NewTicketModal from './NewTicketModal';
 import TicketDetailView from './TicketDetailView';
@@ -81,23 +81,23 @@ const SupportTickets = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tickets.map((ticket) => (
-            <div 
-              key={ticket.id} 
-              className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group"
-            >
+            <div key={ticket.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm group">
               <div className="flex justify-between items-start mb-4">
                 <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-1 rounded-md tracking-widest uppercase font-mono">
                   ID-{ticket.id}
                 </span>
-                <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide ${
-                  ticket.priority === 'High' ? 'bg-red-100 text-red-600' : 
-                  ticket.priority === 'Medium' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
+                
+                {/* THIS BADGE UPDATES AUTOMATICALLY */}
+                <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide transition-colors duration-300 ${
+                  ticket.status?.toLowerCase() === 'resolved'
+                    ? 'bg-green-100 text-green-700 border border-green-200' 
+                    : 'bg-blue-100 text-blue-700 border border-blue-200'
                 }`}>
-                  {ticket.priority} Priority
+                  {ticket.status || 'Open'}
                 </span>
               </div>
 
-              <h3 className="text-lg font-bold mb-1 group-hover:text-blue-700 transition-colors line-clamp-2 leading-snug">
+              <h3 className={`text-lg font-bold mb-1 transition-colors ${ticket.status === 'Resolved' ? 'text-slate-400' : 'text-slate-800'}`}>
                 {ticket.subject}
               </h3>
               <p className="text-sm text-slate-500 mb-6 font-medium">{ticket.client}</p>
