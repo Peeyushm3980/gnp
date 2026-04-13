@@ -16,7 +16,7 @@ app = FastAPI(title="G&P ERP Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173","https://aez88hvyo8.ap.loclx.io","https://bountiful-nonpunitory-albert.ngrok-free.dev"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,10 +40,11 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.post("/api/documents/upload")
 async def upload_document(
-    client_name: str, 
-    category: str, 
-    file: UploadFile = File(...), 
-    expiry_date: str = None,
+    file: UploadFile = File(...),
+    client_name: str = Form(...),    # Changed from query param to Form
+    client_phone: str = Form(None), # Added for WhatsApp feature
+    expiry_date: str = Form(None),   # Changed to Form
+    category: str = Form(...),       # Changed to Form
     db: AsyncSession = Depends(get_db)
 ):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
@@ -61,6 +62,7 @@ async def upload_document(
         filename=file.filename, 
         file_path=file_path, 
         client_name=client_name, 
+        client_phone=client_phone, # Save the phone number
         expiry_date=expiry_dt,
         category=category
     )

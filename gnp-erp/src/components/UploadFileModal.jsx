@@ -8,6 +8,7 @@ const UploadFileModal = ({ isOpen, onClose, onFileUploaded }) => {
   const [category, setCategory] = useState('Audit');
   const [expiryDate, setExpiryDate] = useState(''); // New state for calendar
   const [uploading, setUploading] = useState(false);
+  const [clientPhone, setClientPhone] = useState('');
 
   if (!isOpen) return null;
 
@@ -18,15 +19,17 @@ const UploadFileModal = ({ isOpen, onClose, onFileUploaded }) => {
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('client_name', clientName);
+    formData.append('client_phone', clientPhone); // Ensure this state exists
+    formData.append('expiry_date', expiryDate);
+    formData.append('category', category);
     
     try {
       // Sending client_name, category, and expiry_date as query params 
       // to match your FastAPI route structure
-      const response = await api.post(
-        `/documents/upload?client_name=${encodeURIComponent(clientName)}&category=${encodeURIComponent(category)}&expiry_date=${encodeURIComponent(expiryDate)}`, 
-        formData, 
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
+      const response = await api.post('/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       
       onFileUploaded(response.data);
       // Reset local state
@@ -73,6 +76,18 @@ const UploadFileModal = ({ isOpen, onClose, onFileUploaded }) => {
               placeholder="e.g. Apollo Hospitals"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">WhatsApp Number</label>
+            <input 
+              required
+              type="tel"
+              style={{ backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+              className="w-full border border-[var(--border-color)] rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="e.g. 919876543210"
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
             />
           </div>
 

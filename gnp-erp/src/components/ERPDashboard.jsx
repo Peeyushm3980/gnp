@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import { Phone,
   LayoutDashboard, AlertCircle, ArrowRightLeft, 
   Clock, CheckCircle2, TrendingUp, MapPin, 
   ExternalLink, Bell, CheckCircle, FileWarning,
@@ -191,6 +191,12 @@ const ERPDashboard = () => {
                     <div className="text-xs font-bold text-slate-800">{doc.filename}</div>
                     <div className="text-[10px] text-slate-500 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-400" /> {doc.client_name}
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Phone size={10} className="text-slate-400" />
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          {doc.client_phone || "No Number Linked"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">

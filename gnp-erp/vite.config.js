@@ -7,4 +7,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-})
+  server: {
+    allowedHosts: [
+      'aez88hvyo8.ap.loclx.io'
+    ]
+  }
+})  
