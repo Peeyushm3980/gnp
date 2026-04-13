@@ -316,6 +316,27 @@ async def create_user(data: dict, db: AsyncSession = Depends(get_db)):
     
     return {"message": f"Staff member {username} added successfully"}
 
+@app.delete("/api/documents/{doc_id}")
+async def delete_document(doc_id: int, db: AsyncSession = Depends(get_db)):
+    # 1. Fetch document metadata
+    result = await db.execute(select(models.Document).where(models.Document.id == doc_id))
+    doc = result.scalars().first()
+    
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # 2. Delete physical file if it exists
+    if doc.filename:
+        file_path = os.path.join(UPLOAD_DIR, doc.filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+    # 3. Remove record from Database
+    await db.delete(doc)
+    await db.commit()
+    
+    return {"message": f"Document {doc.filename} deleted successfully"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)

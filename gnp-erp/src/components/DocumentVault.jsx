@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Search, HardDrive, Download, Eye } from 'lucide-react';
+import { FileText, Search, HardDrive, Download, Eye, Trash2 } from 'lucide-react';
 import api from '../api';
 import UploadFileModal from './UploadFileModal';
 
@@ -11,6 +11,19 @@ const DocumentVault = () => {
   useEffect(() => {
     fetchDocuments();
   }, []);
+
+  const handleDelete = async (docId) => {
+    if (window.confirm("Are you sure you want to delete this document? This cannot be undone.")) {
+      try {
+        await api.delete(`/documents/${docId}`);
+        // Refresh the list after deletion
+        fetchDocuments(); 
+      } catch (error) {
+        console.error("Delete failed:", error);
+        alert("Error deleting document");
+      }
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -66,6 +79,7 @@ const DocumentVault = () => {
               <tr className="text-slate-400 text-[10px] uppercase font-bold tracking-widest">
                 <th className="px-8 py-4">File Details</th>
                 <th className="px-8 py-4">Client</th>
+                <th className="px-8 py-4">Fone</th>
                 <th className="px-8 py-4">Category</th>
                 <th className="px-8 py-4">Date</th>
                 <th className="px-8 py-4 text-right">Actions</th>
@@ -83,6 +97,7 @@ const DocumentVault = () => {
                     </div>
                   </td>
                   <td className="px-8 py-5 text-sm font-medium">{doc.client_name}</td>
+                  <td className="px-8 py-5 text-sm font-medium">{doc.client_phone}</td>
                   <td className="px-8 py-5"><span className="bg-slate-100 px-2 py-1 rounded text-[10px] font-bold uppercase">{doc.category}</span></td>
                   <td className="px-8 py-5 text-sm text-slate-500">
                     {new Date(doc.upload_date).toLocaleDateString()}
@@ -92,7 +107,7 @@ const DocumentVault = () => {
                       
                       {/* VIEW BUTTON */}
                       <button 
-                        onClick={() => window.open(`http://localhost:8000/api/documents/file/${doc.id}?action=view`, '_blank')}
+                        onClick={() => window.open(`https://bountiful-nonpunitory-albert.ngrok-free.dev/api/documents/file/${doc.id}?action=view`, '_blank')}
                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" 
                         title="View in Browser"
                       >
@@ -101,11 +116,18 @@ const DocumentVault = () => {
 
                       {/* DOWNLOAD BUTTON */}
                       <button 
-                        onClick={() => window.location.href = `http://localhost:8000/api/documents/file/${doc.id}?action=download`}
+                        onClick={() => window.location.href = `https://bountiful-nonpunitory-albert.ngrok-free.dev/api/documents/file/${doc.id}?action=download`}
                         className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" 
                         title="Download to PC"
                       >
                         <Download size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(doc.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete Document"
+                      >
+                        <Trash2 size={18} />
                       </button>
                       
                     </div>

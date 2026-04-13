@@ -65,6 +65,7 @@ class Document(DocumentBase):
     id: int
     file_path: str
     upload_date: datetime
+    client_phone: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 class Task(TaskBase):
