@@ -16,7 +16,7 @@ app = FastAPI(title="G&P ERP Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173","https://aez88hvyo8.ap.loclx.io","https://bountiful-nonpunitory-albert.ngrok-free.dev"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173","https://3emrp61pvw.ap.loclx.io","https://bountiful-nonpunitory-albert.ngrok-free.dev"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -337,6 +337,47 @@ async def delete_document(doc_id: int, db: AsyncSession = Depends(get_db)):
     
     return {"message": f"Document {doc.filename} deleted successfully"}
 
+@app.delete("/api/compliance/tasks/{task_id}")
+async def delete_task(task_id: int, db: AsyncSession = Depends(get_db)):
+    # 1. Fetch the task from the 'tasks' table
+    result = await db.execute(select(models.Task).where(models.Task.id == task_id))
+    task = result.scalars().first()
+    
+    if not task:
+        raise HTTPException(status_code=404, detail="Task engagement not found")
+
+    try:
+        # 2. Remove the task record
+        await db.delete(task)
+        await db.commit()
+        
+        return {"status": "success", "deleted_id": task_id}
+        
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/support/tickets/{ticket_id}")
+async def delete_ticket(ticket_id: int, db: AsyncSession = Depends(get_db)):
+    # 1. Fetch the ticket from the database
+    result = await db.execute(select(models.Ticket).where(models.Ticket.id == ticket_id))
+    ticket = result.scalars().first()
+    
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    try:
+        # 2. Remove the ticket
+        await db.delete(ticket)
+        await db.commit()
+        
+        # 3. Return valid JSON to prevent frontend parsing errors
+        return {"status": "success", "message": f"Ticket #{ticket_id} removed"}
+        
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+        
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)

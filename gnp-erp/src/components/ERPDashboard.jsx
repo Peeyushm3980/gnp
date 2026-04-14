@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone,
+import { Phone, Trash2 ,
   LayoutDashboard, AlertCircle, ArrowRightLeft, 
   Clock, CheckCircle2, TrendingUp, MapPin, 
   ExternalLink, Bell, CheckCircle, FileWarning,
@@ -66,6 +66,25 @@ const ERPDashboard = () => {
     }, () => setAttendanceStatus('denied'));
   };
 
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm("Remove this task engagement from the dashboard?")) return;
+
+    try {
+
+      const response = await api.delete(`/compliance/tasks/${taskId}`);
+
+      if (response.status === 200) {
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error("Full Error Object:", error);
+      fetchDashboardData();
+      if (error.response?.status !== 200) {
+        alert("Error removing task engagement.");
+      }
+    }
+  };
+
   if (loading) return <div className="p-10 text-slate-500 animate-pulse text-center font-bold">Synchronizing G&P ERP Data...</div>;
 
   return (
@@ -116,6 +135,7 @@ const ERPDashboard = () => {
                   <th className="px-6 py-4">Assignee</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4"></th>
+                  <th className="px-6 py-4"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -139,6 +159,15 @@ const ERPDashboard = () => {
                       }`}>
                         {task.assigned_to.includes('Leave') ? 'ACTION REQUIRED' : 'ON TRACK'}
                       </span>
+                    </td>
+                    <td className="p-4 text-right">
+                      <button 
+                        onClick={() => handleDeleteTask(task.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete Task"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <button 
