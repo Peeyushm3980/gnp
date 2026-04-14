@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ERPDashboard from './components/ERPDashboard';
 import DocumentVault from './components/DocumentVault';
 import SupportTickets from './components/SupportTickets';
@@ -8,10 +9,11 @@ import StaffTracker from './components/StaffTracker';
 import Login from './components/Login';
 import UserManagement from './components/UserManagement';
 import ThemeSettings from './components/ThemeSettings';
+import StaffHierarchy from './components/StaffHierarchy';
 import { 
   LayoutDashboard, FolderOpen, TicketCheck, 
   Users, Handshake, FilePieChart, Menu, 
-  X, MapPin, LogOut 
+  X, MapPin, LogOut , Network
 } from 'lucide-react';
 
 function App() {
@@ -34,6 +36,7 @@ function App() {
     { name: 'Projects', icon: LayoutDashboard },
     { name: 'Documents', icon: FolderOpen },
     { name: 'Tickets', icon: TicketCheck },
+    { name: 'Hierarchy', icon: Network },
     { name: 'HR/Payroll', icon: Users },
     { name: 'CRM', icon: Handshake },
     { name: 'Accounts', icon: FilePieChart },
@@ -52,6 +55,7 @@ function App() {
       case 'Projects': return <ERPDashboard />;
       case 'Documents': return <DocumentVault />;
       case 'Tickets': return <SupportTickets />;
+      case 'Hierarchy': return <StaffHierarchy loggedInUserId={user.id} />;
       case 'CRM': return <ClientCRM />;
       case 'Accounts': return <FirmAccounts />;
       case 'Staff Tracker': return <StaffTracker />;

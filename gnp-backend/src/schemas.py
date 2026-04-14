@@ -4,7 +4,15 @@ from typing import Optional, List
 
 # --- BASE SCHEMAS ---
 # These are used as the "Source of Truth" for data structure
+class UserTreeResponse(BaseModel):
+    id: int
+    username: str
+    role: str
+    subordinates: List['UserTreeResponse'] = []
 
+    class Config:
+        from_attributes = True
+        
 class ClientLeadBase(BaseModel):
     name: str
     company: str

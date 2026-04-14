@@ -1,13 +1,20 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy.orm import relationship
 from database import Base
 import datetime
 
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    password_hash = Column(String) # Never store plain text!
-    role = Column(String, default="user") # "admin" or "user"
+    username = Column(String, unique=True)
+    password_hash = Column(String)
+    role = Column(String) # root, manager, user
+    
+    # NEW: Self-referential foreign key
+    parent_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Relationship to children (subordinates)
+    subordinates = relationship("User", backref="manager", remote_side=[id])
     
 class ClientLead(Base): # For ClientCRM
     __tablename__ = "leads"

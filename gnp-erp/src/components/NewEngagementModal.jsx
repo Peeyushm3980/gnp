@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Users, Briefcase } from 'lucide-react';
 import api from '../api';
 
 const NewEngagementModal = ({ isOpen, onClose, onTaskAdded }) => {
@@ -11,14 +11,37 @@ const NewEngagementModal = ({ isOpen, onClose, onTaskAdded }) => {
     last_action: 'Engagement Started'
   });
 
+  const [availableStaff, setAvailableStaff] = useState([]);
+  const [fetching, setFetching] = useState(false);
+
+  // NEW: Fetch active staff members when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const fetchStaff = async () => {
+        setFetching(true);
+        try {
+          const response = await api.get('/users');
+          setAvailableStaff(response.data);
+        } catch (error) {
+          console.error("Failed to load staff for engagement:", error);
+        } finally {
+          setFetching(false);
+        }
+      };
+      fetchStaff();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.assigned_to) return alert("Please select a staff member to assign this task.");
+    
     try {
       const response = await api.post('/tasks', formData);
-      onTaskAdded(response.data); // Update the list in parent component
-      onClose(); // Close modal
+      onTaskAdded(response.data);
+      onClose();
     } catch (error) {
       alert("Error creating engagement: " + error.message);
     }
@@ -29,48 +52,64 @@ const NewEngagementModal = ({ isOpen, onClose, onTaskAdded }) => {
       <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
           <h2 className="font-bold text-xl text-slate-800">New Engagement</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Client Name</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1 text-[10px] tracking-widest">Client Name</label>
             <input 
               required
-              className="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="e.g. Apollo Hospitals"
+              className="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              placeholder="e.g. Reliance Industries"
               onChange={(e) => setFormData({...formData, client: e.target.value})}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Service Category</label>
-            <select 
-              className="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-              onChange={(e) => setFormData({...formData, service: e.target.value})}
-            >
-              <option>Statutory Audit</option>
-              <option>GST Filing</option>
-              <option>Income Tax</option>
-              <option>ROC Compliance</option>
-            </select>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1 text-[10px] tracking-widest">Service Category</label>
+            <div className="relative">
+              <Briefcase className="absolute left-3 top-3 text-slate-300" size={16} />
+              <select 
+                className="w-full border border-slate-200 rounded-xl p-3 pl-10 focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm appearance-none"
+                onChange={(e) => setFormData({...formData, service: e.target.value})}
+              >
+                <option>Statutory Audit</option>
+                <option>GST Filing</option>
+                <option>Income Tax</option>
+                <option>ROC Compliance</option>
+              </select>
+            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Assign To</label>
-            <input 
-              required
-              className="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Employee Name"
-              onChange={(e) => setFormData({...formData, assigned_to: e.target.value})}
-            />
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1 text-[10px] tracking-widest">Assign To</label>
+            <div className="relative">
+              <Users className="absolute left-3 top-3 text-slate-300" size={18} />
+              {/* UPDATED: Dropdown instead of Text Input */}
+              <select 
+                required
+                className="w-full border border-slate-200 rounded-xl p-3 pl-10 focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm appearance-none"
+                value={formData.assigned_to}
+                onChange={(e) => setFormData({...formData, assigned_to: e.target.value})}
+                disabled={fetching}
+              >
+                <option value="">{fetching ? "Loading staff list..." : "Choose staff member..."}</option>
+                {availableStaff.map((staff) => (
+                  <option key={staff.id} value={staff.username}>
+                    {staff.username} ({staff.role})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <button 
             type="submit"
-            className="w-full bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-800 transition-all mt-4"
+            disabled={fetching}
+            className="w-full bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-800 transition-all mt-4 active:scale-95 disabled:bg-slate-300"
           >
-            Create Engagement
+            Create Task Engagement
           </button>
         </form>
       </div>

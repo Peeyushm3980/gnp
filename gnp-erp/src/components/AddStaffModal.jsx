@@ -1,25 +1,47 @@
-import React, { useState } from 'react';
-import { X, UserPlus, Shield, Lock, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, UserPlus, Shield, Lock, User, GitMerge } from 'lucide-react';
 import api from '../api';
 
 const AddStaffModal = ({ isOpen, onClose, onStaffAdded }) => {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    role: 'user'
+    role: 'user',
+    parent_id: ''
   });
+  const [availableManagers, setAvailableManagers] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setAvailableManagers(res.data);
+        } catch (err) {
+          console.error("Failed to fetch managers", err);
+        }
+      };
+      fetchUsers();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const payload = {
+      username: formData.username,
+      password: formData.password,
+      role: formData.role,
+      parent_id: formData.parent_id ? Number(formData.parent_id) : null
+    };
     try {
       await api.post('/users', formData);
       onStaffAdded(); // Refresh the list
       onClose();      // Close modal
-      setFormData({ username: '', password: '', role: 'user' });
+      setFormData({ username: '', password: '', role: 'user', parent_id: '' });
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to add staff");
     } finally {
@@ -65,6 +87,23 @@ const AddStaffModal = ({ isOpen, onClose, onStaffAdded }) => {
                 value={formData.password}
                 onChange={e => setFormData({...formData, password: e.target.value})}
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Reports To (Manager)</label>
+            <div className="relative">
+              <GitMerge className="absolute left-4 top-3.5 text-slate-300" size={18} />
+              <select 
+                className="w-full bg-slate-50 border-none rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-600 transition-all appearance-none text-sm text-slate-700"
+                value={formData.parent_id}
+                onChange={e => setFormData({...formData, parent_id: e.target.value})}
+              >
+                <option value="">No Manager (Root Level)</option>
+                {availableManagers.map(m => (
+                  <option key={m.id} value={m.id}>{m.username} ({m.role})</option>
+                ))}
+              </select>
             </div>
           </div>
 

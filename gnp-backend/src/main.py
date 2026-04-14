@@ -16,7 +16,7 @@ app = FastAPI(title="G&P ERP Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173","https://3emrp61pvw.ap.loclx.io","https://bountiful-nonpunitory-albert.ngrok-free.dev"],
+    allow_origins=["*"], # Use "*" temporarily to prove it's a CORS issue
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -297,24 +297,32 @@ async def create_user(data: dict, db: AsyncSession = Depends(get_db)):
     username = data.get("username")
     password = data.get("password")
     role = data.get("role", "user")
+    
+    # NEW: Ensure parent_id is an integer or None to prevent ROLLBACK
+    parent_raw = data.get("parent_id")
+    parent_id = int(parent_raw) if parent_raw and str(parent_raw).isdigit() else None
 
     # 1. Check if user already exists
     existing_user = await db.execute(select(models.User).where(models.User.username == username))
     if existing_user.scalars().first():
         raise HTTPException(status_code=400, detail="Username already registered")
 
-    # 2. Create new user
+    # 2. Create new user with hierarchy link
     new_user = models.User(
         username=username,
-        password_hash=password, # In production, use pwd_context.hash(password)
-        role=role
+        password_hash=password, 
+        role=role,
+        parent_id=parent_id 
     )
     
     db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
-    
-    return {"message": f"Staff member {username} added successfully"}
+    try:
+        await db.commit() # The ROLLBACK happened here in your logs
+        return {"message": f"Staff member {username} added", "id": new_user.id}
+    except Exception as e:
+        await db.rollback()
+        print(f"DATABASE ERROR: {str(e)}") # This will show the exact constraint fail in console
+        raise HTTPException(status_code=500, detail="Check if the selected Manager exists.")
 
 @app.delete("/api/documents/{doc_id}")
 async def delete_document(doc_id: int, db: AsyncSession = Depends(get_db)):
@@ -398,6 +406,33 @@ async def delete_lead(lead_id: int, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/api/users/hierarchy/{user_id}", response_model=schemas.UserTreeResponse)
+async def get_user_hierarchy(user_id: int, db: AsyncSession = Depends(get_db)):
+    # Fetch user and their subordinates recursively
+    # Note: In production, consider using a CTE for deep trees
+    async def build_tree(current_user_id):
+        result = await db.execute(
+            select(models.User).where(models.User.id == current_user_id)
+        )
+        user = result.scalars().first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Manually load subordinates to build the nested structure
+        sub_result = await db.execute(
+            select(models.User).where(models.User.parent_id == current_user_id)
+        )
+        subs = sub_result.scalars().all()
+        
+        return {
+            "id": user.id,
+            "username": user.username,
+            "role": user.role,
+            "subordinates": [await build_tree(s.id) for s in subs]
+        }
+
+    return await build_tree(user_id)
             
 if __name__ == "__main__":
     import uvicorn
