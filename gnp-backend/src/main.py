@@ -377,7 +377,28 @@ async def delete_ticket(ticket_id: int, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- CLIENT CRM DELETE API ---
+@app.delete("/api/leads/{lead_id}")
+async def delete_lead(lead_id: int, db: AsyncSession = Depends(get_db)):
+    # 1. Fetch the lead record
+    result = await db.execute(select(models.ClientLead).where(models.ClientLead.id == lead_id))
+    lead = result.scalars().first()
+    
+    if not lead:
+        raise HTTPException(status_code=404, detail="Client lead not found")
+
+    try:
+        # 2. Remove from Database
+        await db.delete(lead)
+        await db.commit()
         
+        return {"status": "success", "message": f"Lead for {lead.name} removed"}
+        
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+            
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)

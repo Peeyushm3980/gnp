@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, TrendingUp, Phone, Mail, MoreVertical, Search, Filter } from 'lucide-react';
+import { UserPlus, TrendingUp, Phone, Mail, MoreVertical, Search, Filter, Trash2 } from 'lucide-react';
 import api from '../api';
 import NewLeadModal from './NewLeadModal';
 
@@ -26,6 +26,21 @@ const ClientCRM = () => {
   const handleLeadAdded = (newLead) => {
     setLeads([newLead, ...leads]);
   };
+
+  const handleDeleteLead = async (leadId) => {
+  if (!window.confirm("Are you sure you want to delete this client lead?")) return;
+
+  try {
+    const response = await api.delete(`/leads/${leadId}`);
+    if (response.status === 200) {
+      // Refresh the CRM list
+      fetchLeads(); 
+    }
+  } catch (error) {
+    console.error("Failed to delete lead:", error);
+    alert("Error removing client lead.");
+  }
+};
 
   // Calculate Total Pipeline Value
   const totalValue = leads.reduce((acc, curr) => acc + (curr.value || 0), 0);
@@ -75,7 +90,7 @@ const ClientCRM = () => {
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h3 className="font-bold text-slate-800">New Potential Clients</h3>
           <div className="flex gap-2">
-             <button className="p-2 text-slate-400 hover:bg-white rounded-lg border border-transparent hover:border-slate-200"><Filter size={18}/></button>
+            <button className="p-2 text-slate-400 hover:bg-white rounded-lg border border-transparent hover:border-slate-200"><Filter size={18}/></button>
           </div>
         </div>
 
@@ -86,8 +101,10 @@ const ClientCRM = () => {
         ) : (
           <div className="divide-y divide-slate-50">
             {leads.map((lead) => (
-              <div key={lead.id} className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-slate-50/50 transition-colors gap-4">
-                <div className="flex items-center gap-4">
+              /* Added 'relative' here to anchor any absolute elements, 
+                though we will move the button into the flex group below */
+              <div key={lead.id} className="relative p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:bg-slate-50/50 transition-colors gap-4">                
+                <div className="flex items-center gap-4">                  
                   <div className="w-12 h-12 bg-blue-50 text-blue-700 rounded-full flex items-center justify-center font-bold text-lg shadow-sm">
                     {lead.name[0]}
                   </div>
@@ -107,9 +124,26 @@ const ClientCRM = () => {
                   </span>
                 </div>
 
+                {/* Action Buttons Group */}
                 <div className="flex gap-1 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-4 sm:pt-0">
                   <button className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Phone size={18} /></button>
                   <button className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><Mail size={18} /></button>
+                  
+                  {/* CORRECTED DELETE BUTTON:
+                      - Removed 'absolute', 'top-4', 'right-4'
+                      - Keeps it in line with the other icons
+                  */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteLead(lead.id);
+                    }}
+                    className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                    title="Delete Lead"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                  
                   <button className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"><MoreVertical size={18} /></button>
                 </div>
               </div>
