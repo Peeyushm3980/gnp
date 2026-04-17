@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Search, HardDrive, Download, Eye, Trash2 } from 'lucide-react';
+import { FileText, Search, HardDrive, Download, Eye, Trash2, Lock as LockIcon, Globe} from 'lucide-react';
 import api from '../api';
 import UploadFileModal from './UploadFileModal';
 
-const DocumentVault = () => {
+const DocumentVault = ({ user }) => {
   const [documents, setDocuments] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDocuments();
-  }, []);
+    if (user?.id) {
+      fetchDocuments();
+    }
+  }, [user]);
 
   const handleDelete = async (docId) => {
     if (window.confirm("Are you sure you want to delete this document? This cannot be undone.")) {
@@ -26,13 +28,36 @@ const DocumentVault = () => {
   };
 
   const fetchDocuments = async () => {
+    setLoading(true);
     try {
-      const response = await api.get('/documents');
+      // Pass the user.id from your auth state
+      const response = await api.get(`/documents?user_id=${user.id}`);
       setDocuments(response.data);
-    } catch (err) {
-      console.error("Failed to load documents", err);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleVisibility = async (doc) => {
+    const newVisibility = !doc.is_public; // Flip the current state
+    
+    try {
+      // We use a PATCH request to specifically update the visibility field
+      const response = await api.patch(`/documents/${doc.id}/visibility?is_public=${newVisibility}`);
+
+      if (response.status === 200) {
+        // Update the documents list in the local state to reflect the change
+        setDocuments(prevDocs => 
+          prevDocs.map(d => 
+            d.id === doc.id ? { ...d, is_public: newVisibility } : d
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Failed to update document visibility:", error);
+      alert("Permission update failed. Please check your connection.");
     }
   };
 
@@ -55,7 +80,8 @@ const DocumentVault = () => {
       <UploadFileModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onFileUploaded={fetchDocuments} 
+        onFileUploaded={fetchDocuments}
+        user={user}
       />
 
       {/* STORAGE WIDGET */}
@@ -104,7 +130,15 @@ const DocumentVault = () => {
                   </td>
                   <td className="px-8 py-5 text-right">
                     <div className="flex justify-end gap-2">
-                      
+                      <button 
+                        onClick={() => handleToggleVisibility(doc)}
+                        className={`p-2 rounded-lg transition-all ${
+                          doc.is_public ? 'text-emerald-500 hover:bg-emerald-50' : 'text-amber-500 hover:bg-amber-50'
+                        }`}
+                      >
+                        {/* Use the new name here */}
+                        {doc.is_public ? <Globe size={18} /> : <LockIcon size={18} />}
+                      </button>
                       {/* VIEW BUTTON */}
                       <button 
                         onClick={() => window.open(`https://bountiful-nonpunitory-albert.ngrok-free.dev/api/documents/file/${doc.id}?action=view`, '_blank')}

@@ -23,6 +23,8 @@ class DocumentBase(BaseModel):
     filename: str
     client_name: str
     category: str
+    is_public: bool = True 
+    owner_id: int
 
 class TaskBase(BaseModel):
     client: str

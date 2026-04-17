@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { X, Upload, Calendar } from 'lucide-react';
 import api from '../api';
 
-const UploadFileModal = ({ isOpen, onClose, onFileUploaded }) => {
+const UploadFileModal = ({ isOpen, onClose, onFileUploaded, user }) => {
   const [file, setFile] = useState(null);
   const [clientName, setClientName] = useState('');
   const [category, setCategory] = useState('Audit');
-  const [expiryDate, setExpiryDate] = useState(''); // New state for calendar
+  const [expiryDate, setExpiryDate] = useState('');
+  const [isPublic, setIsPublic] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [clientPhone, setClientPhone] = useState('');
 
@@ -14,15 +15,19 @@ const UploadFileModal = ({ isOpen, onClose, onFileUploaded }) => {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!file) return alert("Please select a file");
+    if (!file || !user?.id) {
+      return alert("Upload failed: User context not found. Please re-login.");
+    }
 
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
     formData.append('client_name', clientName);
-    formData.append('client_phone', clientPhone); // Ensure this state exists
+    formData.append('client_phone', clientPhone);
     formData.append('expiry_date', expiryDate);
     formData.append('category', category);
+    formData.append('owner_id', user.id);
+    formData.append('is_public', isPublic);
     
     try {
       // Sending client_name, category, and expiry_date as query params 
@@ -120,6 +125,18 @@ const UploadFileModal = ({ isOpen, onClose, onFileUploaded }) => {
                 onChange={(e) => setExpiryDate(e.target.value)}
               />
             </div>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div>
+              <p className="text-sm font-bold text-slate-700">Make Public</p>
+              <p className="text-[10px] text-slate-400">Everyone in the firm can see this</p>
+            </div>
+            <input 
+              type="checkbox" 
+              checked={isPublic} 
+              onChange={(e) => setIsPublic(e.target.checked)}
+              className="w-5 h-5 accent-blue-600"
+            />
           </div>
 
           {/* Submission Button */}

@@ -53,7 +53,7 @@ function App() {
   const renderPage = () => {
     switch(currentPage) {
       case 'Projects': return <ERPDashboard />;
-      case 'Documents': return <DocumentVault />;
+      case 'Documents': return <DocumentVault user={user} />;
       case 'Tickets': return <SupportTickets />;
       case 'Hierarchy': return <StaffHierarchy loggedInUserId={user.id} />;
       case 'CRM': return <ClientCRM />;

@@ -43,6 +43,8 @@ async def upload_document(
     file: UploadFile = File(...),
     client_name: str = Form(...),    # Changed from query param to Form
     client_phone: str = Form(None), # Added for WhatsApp feature
+    owner_id: int = Form(...), # NEW: Capture the logged-in user ID
+    is_public: bool = Form(True), # NEW: Capture toggle state
     expiry_date: str = Form(None),   # Changed to Form
     category: str = Form(...),       # Changed to Form
     db: AsyncSession = Depends(get_db)
@@ -62,6 +64,8 @@ async def upload_document(
         filename=file.filename, 
         file_path=file_path, 
         client_name=client_name, 
+        owner_id=owner_id,
+        is_public=is_public,
         client_phone=client_phone, # Save the phone number
         expiry_date=expiry_dt,
         category=category
@@ -69,6 +73,14 @@ async def upload_document(
     db.add(new_doc)
     await db.commit()
     return {"message": "File uploaded locally and record saved to Postgres"}
+
+@app.patch("/api/documents/{doc_id}/visibility")
+async def toggle_visibility(doc_id: int, is_public: bool, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Document).where(models.Document.id == doc_id))
+    doc = result.scalars().first()
+    doc.is_public = is_public
+    await db.commit()
+    return {"status": "updated", "is_public": doc.is_public}
 
 # --- ERP DASHBOARD API ---
 @app.get("/api/tasks")
@@ -106,9 +118,26 @@ async def create_lead(lead: schemas.ClientLeadCreate, db: AsyncSession = Depends
     return new_lead
 
 # --- DOCUMENT VAULT (GET) ---
-@app.get("/api/documents", response_model=List[schemas.Document])
-async def get_documents(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(models.Document))
+@app.get("/api/documents")
+async def get_documents(user_id: int, db: AsyncSession = Depends(get_db)):
+    # 1. Get all users in this user's sub-tree (subordinates)
+    async def get_subordinate_ids(uid):
+        res = await db.execute(select(models.User.id).where(models.User.parent_id == uid))
+        ids = res.scalars().all()
+        for sub_id in ids:
+            ids.extend(await get_subordinate_ids(sub_id))
+        return ids
+
+    sub_ids = await get_subordinate_ids(user_id)
+    allowed_owner_ids = [user_id] + sub_ids
+
+    # 2. Query: (is_public OR owner is in allowed_owner_ids)
+    query = select(models.Document).where(
+        (models.Document.is_public == True) | 
+        (models.Document.owner_id.in_(allowed_owner_ids))
+    )
+    
+    result = await db.execute(query)
     return result.scalars().all()
 
 # --- ERP DASHBOARD (POST) ---
