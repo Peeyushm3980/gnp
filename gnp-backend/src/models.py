@@ -53,8 +53,22 @@ class Ticket(Base): # For SupportTickets
     subject = Column(String)
     client = Column(String)
     priority = Column(String)
-    status = Column(String, default="Open")
+    assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    status = Column(String, default="Open") # Open, Resolved, Hold, Cancel, Pending
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    assignee = relationship("User", backref="tickets")
+
+class TicketAudit(Base):
+    __tablename__ = "ticket_audits"
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(Integer, ForeignKey("tickets.id"))
+    changed_by = Column(String) # Username of the person who made the change
+    change_type = Column(String) # "Status Update" or "Reassignment"
+    old_value = Column(String)
+    new_value = Column(String)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    ticket = relationship("Ticket", backref="audit_logs")
 
 # Add this to models.py if not already there
 class Invoice(Base):

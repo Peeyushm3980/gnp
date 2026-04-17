@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 import os
 import shutil
 from database import get_db, engine, Base
@@ -150,9 +151,14 @@ async def create_task(task: schemas.TaskCreate, db: AsyncSession = Depends(get_d
     return new_task
 
 # --- SUPPORT TICKETS (GET) ---
-@app.get("/api/tickets", response_model=List[schemas.Ticket])
+@app.get("/api/tickets")
 async def get_tickets(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(models.Ticket))
+    query = select(models.Ticket).options(
+        selectinload(models.Ticket.assignee),
+        selectinload(models.Ticket.audit_logs) # LOAD THE AUDIT LOGS
+    ).order_by(models.Ticket.created_at.desc())
+    
+    result = await db.execute(query)
     return result.scalars().all()
 
 # --- FIRM ACCOUNTS / INVOICES (GET & POST) ---
@@ -235,21 +241,48 @@ async def get_expiring_docs(db: AsyncSession = Depends(get_db)):
     result = await db.execute(query)
     return result.scalars().all()
 
-@app.patch("/api/tickets/{ticket_id}", response_model=schemas.Ticket)
-async def update_ticket_status(ticket_id: int, payload: dict, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(models.Ticket).filter(models.Ticket.id == ticket_id))
-    db_ticket = result.scalar_one_or_none()
+@app.patch("/api/tickets/{ticket_id}")
+async def update_ticket(ticket_id: int, data: dict, user_name: str = "Admin", db: AsyncSession = Depends(get_db)):
+    # 1. Fetch ticket with current relationships
+    query = select(models.Ticket).options(selectinload(models.Ticket.assignee)).where(models.Ticket.id == ticket_id)
+    result = await db.execute(query)
+    ticket = result.scalars().first()
     
-    if not db_ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-    
-    # Update status if provided in the body (e.g., {"status": "Resolved"})
-    if "status" in payload:
-        db_ticket.status = payload["status"]
+    # 2. Track Status Change
+    if "status" in data and data["status"] != ticket.status:
+        audit = models.TicketAudit(
+            ticket_id=ticket.id,
+            changed_by=user_name,
+            change_type="Status Update",
+            old_value=ticket.status,
+            new_value=data["status"]
+        )
+        db.add(audit)
+        ticket.status = data["status"]
+
+    # 3. Track Assignment Change
+    if "assigned_to_id" in data and data["assigned_to_id"] != ticket.assigned_to_id:
+        # Fetch old/new names for the audit log text
+        old_name = ticket.assignee.username if ticket.assignee else "Unassigned"
         
+        ticket.assigned_to_id = data["assigned_to_id"]
+        await db.flush() # Temporarily push change to get new relationship
+        
+        # Refresh to get new assignee name
+        await db.refresh(ticket, ["assignee"])
+        new_name = ticket.assignee.username if ticket.assignee else "Unassigned"
+
+        audit = models.TicketAudit(
+            ticket_id=ticket.id,
+            changed_by=user_name,
+            change_type="Reassignment",
+            old_value=old_name,
+            new_value=new_name
+        )
+        db.add(audit)
+
     await db.commit()
-    await db.refresh(db_ticket)
-    return db_ticket
+    return ticket
 
 @app.get("/api/attendance/latest")
 async def get_latest_locations(db: AsyncSession = Depends(get_db)):
