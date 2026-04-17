@@ -79,6 +79,12 @@ const SupportTickets = () => {
     return map[status] || map['Open'];
   };
 
+  const getPriorityStyle = (p) => {
+    if (p === 'High') return 'text-red-600 bg-red-50';
+    if (p === 'Medium') return 'text-amber-600 bg-amber-50';
+    return 'text-blue-600 bg-blue-50';
+  };
+
   return (
     <div className="p-8 bg-slate-50 min-h-screen">
       {/* Header */}
@@ -157,6 +163,7 @@ const SupportTickets = () => {
           <thead className="bg-slate-50/50 border-b border-slate-100">
             <tr>
               <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
+              <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority</th>
               <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
               <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Staff</th>
               <th className="p-6 text-right">Action</th>
@@ -166,6 +173,11 @@ const SupportTickets = () => {
             {filteredTickets.map((ticket) => (
               <tr key={ticket.id} onClick={() => { setSelectedTicket(ticket); setIsDetailOpen(true); }}className="hover:bg-slate-50/50 transition-colors">
                 <td className="p-6 font-bold text-slate-900">{ticket.subject}</td>
+                <td className="p-6 text-center">
+                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-1 mx-auto w-24 ${getPriorityStyle(ticket.priority)}`}>
+                    <AlertCircle size={10} /> {ticket.priority}
+                  </span>
+                </td>
                 <td className="p-6">
                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${getStatusBadge(ticket.status)}`}>
                     {ticket.status}
