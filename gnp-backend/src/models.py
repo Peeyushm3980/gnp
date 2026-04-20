@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import JSON, Boolean, Column, Integer, String, Float, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from database import Base
 import datetime
@@ -87,3 +87,19 @@ class Attendance(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     location_name = Column(String)
+
+class IngestedEmail(Base):
+    __tablename__ = "ingested_emails"
+    id = Column(Integer, primary_key=True, index=True)
+    message_id = Column(String, unique=True, index=True)
+    thread_id = Column(String)
+    subject = Column(String)
+    sender = Column(String)
+    recipient = Column(String)
+    body = Column(Text)
+    snippet = Column(String)
+    received_at = Column(DateTime)
+    has_attachments = Column(Boolean, default=False)
+    # Stores metadata about files: [{"filename": "tax_doc.pdf", "file_id": "..."}]
+    attachments_metadata = Column(JSON, nullable=True) 
+    is_converted_to_ticket = Column(Boolean, default=False)

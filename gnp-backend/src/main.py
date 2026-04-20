@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 import os
 import shutil
 from database import get_db, engine, Base
+from gmail_utils import get_gmail_service, parse_message_parts
 import models, schemas
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -495,7 +496,59 @@ async def get_user_hierarchy(user_id: int, db: AsyncSession = Depends(get_db)):
         }
 
     return await build_tree(user_id)
-            
+
+@app.post("/api/gmail/sync")
+async def sync_gmail_inbox(db: AsyncSession = Depends(get_db)):
+    service = get_gmail_service() # Uses your existing OAuth logic
+    
+    # Search for last 7 days of emails
+    query = "newer_than:7d"
+    results = service.users().messages().list(userId='me', q=query).execute()
+    messages = results.get('messages', [])
+
+    new_emails_count = 0
+    for msg_ref in messages:
+        # Check if already exists to avoid duplicates
+        existing = await db.execute(select(models.IngestedEmail).where(models.IngestedEmail.message_id == msg_ref['id']))
+        if existing.scalars().first():
+            continue
+
+        # Fetch full message content
+        msg = service.users().messages().get(userId='me', id=msg_ref['id'], format='full').execute()
+        payload = msg['payload']
+        headers = payload.get('headers', [])
+        
+        # Parse Headers
+        subject = next((h['value'] for h in headers if h['name'] == 'Subject'), "No Subject")
+        sender = next((h['value'] for h in headers if h['name'] == 'From'), "Unknown")
+        
+        # Extract Body and Attachments (Using logic from your uploaded file)
+        body, attachments = parse_message_parts(service, msg_ref['id'], payload)
+
+        new_email = models.IngestedEmail(
+            message_id=msg_ref['id'],
+            thread_id=msg['threadId'],
+            subject=subject,
+            sender=sender,
+            body=body[:5000],
+            received_at=datetime.fromtimestamp(int(msg['internalDate'])/1000),
+            attachments_metadata=attachments,
+            has_attachments=len(attachments) > 0
+        )
+        db.add(new_email)
+        new_emails_count += 1
+
+    await db.commit()
+    return {"status": "success", "count": len(messages)}
+
+@app.get("/api/gmail/emails")
+async def get_ingested_emails(db: AsyncSession = Depends(get_db)):
+    # Fetch all ingested emails ordered by newest first
+    query = select(models.IngestedEmail).order_by(models.IngestedEmail.received_at.desc())
+    result = await db.execute(query)
+    emails = result.scalars().all()
+    return emails
+           
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)

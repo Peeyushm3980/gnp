@@ -10,10 +10,12 @@ import Login from './components/Login';
 import UserManagement from './components/UserManagement';
 import ThemeSettings from './components/ThemeSettings';
 import StaffHierarchy from './components/StaffHierarchy';
+import GmailInbox from './components/GmailInbox';
 import { 
   LayoutDashboard, FolderOpen, TicketCheck, 
   Users, Handshake, FilePieChart, Menu, 
-  X, MapPin, LogOut , Network
+  X, MapPin, LogOut , Network, Mail, FileText, Settings,
+  ShieldCheck
 } from 'lucide-react';
 
 function App() {
@@ -36,6 +38,7 @@ function App() {
     { name: 'Projects', icon: LayoutDashboard },
     { name: 'Documents', icon: FolderOpen },
     { name: 'Tickets', icon: TicketCheck },
+    { name: 'Mailbox', icon: Mail },
     { name: 'Hierarchy', icon: Network },
     { name: 'HR/Payroll', icon: Users },
     { name: 'CRM', icon: Handshake },
@@ -55,6 +58,7 @@ function App() {
       case 'Projects': return <ERPDashboard />;
       case 'Documents': return <DocumentVault user={user} />;
       case 'Tickets': return <SupportTickets />;
+      case 'Mailbox': return <GmailInbox />;
       case 'Hierarchy': return <StaffHierarchy loggedInUserId={user.id} />;
       case 'CRM': return <ClientCRM />;
       case 'Accounts': return <FirmAccounts />;
