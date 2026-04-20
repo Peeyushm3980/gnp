@@ -102,6 +102,7 @@ const SupportTickets = () => {
           </button>
           <button 
             onClick={() => setIsModalOpen(true)}
+            style={{ backgroundColor: 'var(--primary)' }}
             className="flex items-center gap-2 bg-blue-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg hover:bg-blue-800 transition-all"
           >
             <Plus size={20} /> New Ticket
