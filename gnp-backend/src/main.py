@@ -3,6 +3,7 @@ from typing import List
 
 from fastapi import FastAPI, Depends, Form, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -10,7 +11,7 @@ from sqlalchemy.orm import selectinload
 import os
 import shutil
 from database import get_db, engine, Base
-from gmail_utils import get_gmail_service, parse_message_parts
+from gmail_utils import download_attachment, get_gmail_service, parse_message_parts
 import models, schemas
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -548,7 +549,51 @@ async def get_ingested_emails(db: AsyncSession = Depends(get_db)):
     result = await db.execute(query)
     emails = result.scalars().all()
     return emails
-           
+
+class SaveAttachmentRequest(BaseModel):
+    email_id: int
+    attachment_id: str
+    filename: str
+
+@app.post("/api/gmail/save-attachment")
+async def save_gmail_attachment(
+    request: SaveAttachmentRequest,  # Use the schema here
+    db: AsyncSession = Depends(get_db)
+):
+    # Access data via request.email_id, request.attachment_id, etc.
+    result = await db.execute(
+        select(models.IngestedEmail).where(models.IngestedEmail.id == request.email_id)
+    )
+    email = result.scalars().first()
+    
+    if not email:
+        raise HTTPException(status_code=404, detail="Email record not found")
+
+    service = get_gmail_service()
+    file_data = download_attachment(service, email.message_id, request.attachment_id)
+    
+    if not file_data:
+        raise HTTPException(status_code=400, detail="Could not download attachment")
+
+    # Ensure UPLOAD_DIR exists
+    if not os.path.exists(UPLOAD_DIR):
+        os.makedirs(UPLOAD_DIR)
+
+    file_path = os.path.join(UPLOAD_DIR, request.filename)
+    with open(file_path, "wb") as f:
+        f.write(file_data)
+
+    new_doc = models.Document(
+        filename=request.filename,
+        file_path=file_path,
+        client_name=email.sender,
+        category="Email Attachment"
+    )
+    db.add(new_doc)
+    await db.commit()
+
+    return {"status": "success", "message": f"{request.filename} saved"}
+       
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)

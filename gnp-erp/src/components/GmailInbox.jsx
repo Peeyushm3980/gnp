@@ -10,11 +10,28 @@ const GmailInbox = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState(null);
+  const [savingFile, setSavingFile] = useState(null);
 
   // CRITICAL: Fetch emails as soon as the page loads
   useEffect(() => {
     fetchEmails();
   }, []);
+
+  const handleSaveToVault = async (emailId, file) => {
+    setSavingFile(file.attachmentId);
+    try {
+      await api.post('/gmail/save-attachment', {
+        email_id: emailId,
+        attachment_id: file.attachmentId,
+        filename: file.filename
+      });
+      alert(`${file.filename} added to Document Vault successfully!`);
+    } catch (err) {
+      alert("Failed to save attachment.");
+    } finally {
+      setSavingFile(null);
+    }
+  };
 
   const handleCreateTicketFromEmail = (email) => {
         setSelectedEmail(email); 
@@ -139,8 +156,31 @@ const GmailInbox = () => {
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Documents</label>
                           <div className="flex flex-wrap gap-2">
                             {email.attachments_metadata?.map((file, i) => (
-                              <div key={i} className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-lg text-[10px] font-bold text-slate-700">
-                                <FileText size={12} className="text-blue-500"/> {file.filename}
+                              <div key={i} className="flex items-center justify-between bg-white border border-slate-200 px-4 py-3 rounded-xl shadow-sm">
+                                <div className="flex items-center gap-3">
+                                  <FileText size={16} className="text-blue-500"/>
+                                  <div>
+                                    <p className="text-[10px] font-black text-slate-700 uppercase truncate max-w-[150px]">
+                                      {file.filename}
+                                    </p>
+                                    <p className="text-[8px] text-slate-400 font-bold">
+                                      {(file.size / 1024).toFixed(1)} KB
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <button 
+                                  onClick={() => handleSaveToVault(email.id, file)}
+                                  disabled={savingFile === file.attachmentId}
+                                  className="ml-4 p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-50"
+                                  title="Save to Document Vault"
+                                >
+                                  {savingFile === file.attachmentId ? (
+                                    <RefreshCw size={14} className="animate-spin" />
+                                  ) : (
+                                    <Plus size={14} />
+                                  )}
+                                </button>
                               </div>
                             ))}
                           </div>
