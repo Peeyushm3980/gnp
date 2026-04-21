@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/gnp_erp
+    username: ${DB_USER:Peeyush.Mishra}
+    password: ${DB_PASS:admin}
+  
+  ai:
+    bedrock:
+      aws:
+        region: us-east-1
+        access-key: ${AWS_ACCESS_KEY}
+        secret-key: ${AWS_SECRET_KEY}
+      chat:
+        model: anthropic.claude-3-sonnet-20240229-v1:0
+    
+  jpa:
+    hibernate:
+      ddl-auto: validate # Critical: Do not overwrite existing DB
+    show-sql: true
