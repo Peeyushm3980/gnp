@@ -39,10 +39,12 @@ source venv/bin/activate
 pip install fastapi uvicorn sqlalchemy asyncpg pydantic python-multipart
 python main.py
 
-https://youtu.be/Z9Mni83IK5o
-
 
 ## Frontend Execution (React)
+
+Tutorial:
+https://youtu.be/Z9Mni83IK5o
+
 
 cd gnp-erp
 npm install
