@@ -25,4 +25,16 @@ public class DocumentController {
     public List<Document> searchByClient(@RequestParam String clientName) {
         return documentRepository.findByClientNameContainingIgnoreCase(clientName);
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteDocument(@PathVariable Integer id) {
+        documentRepository.deleteById(id);
+    }
+
+    @PatchMapping("/{id}/visibility")
+    public Document toggleVisibility(@PathVariable Integer id, @RequestParam boolean is_public) {
+        Document doc = documentRepository.findById(id).orElseThrow();
+        doc.setPublic(is_public);
+        return documentRepository.save(doc);
+    }
 }

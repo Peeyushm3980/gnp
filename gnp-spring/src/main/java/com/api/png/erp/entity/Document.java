@@ -29,4 +29,8 @@ public class Document {
 
     @Column(name = "upload_date")
     private LocalDateTime uploadDate = LocalDateTime.now();
+
+    @Column(name = "is_public")
+    @JsonProperty("is_public")
+    private boolean isPublic;
 }

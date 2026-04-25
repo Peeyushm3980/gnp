@@ -1,6 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from typing import List
-
+import hashlib
+import secrets
 from fastapi import FastAPI, Depends, Form, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -14,6 +15,7 @@ from database import get_db, engine, Base
 from gmail_utils import download_attachment, get_gmail_service, parse_message_parts
 import models, schemas
 from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI(title="G&P ERP Backend")
 
@@ -317,24 +319,60 @@ async def get_expiring_compliance(db: AsyncSession = Depends(get_db)):
         print(f"Database Query Error: {e}")
         raise HTTPException(status_code=500, detail="Database comparison failed")
 
+def get_password_hash(password: str):
+    # Creates a random salt and a SHA-256 hash
+    salt = secrets.token_hex(16)
+    hash_obj = hashlib.sha256((password + salt).encode())
+    return f"{salt}:{hash_obj.hexdigest()}"
+
+def verify_password(plain_password: str, stored_password: str):
+    try:
+        # Check if it's already in the new 'salt:hash' format
+        if ":" in stored_password:
+            salt, stored_hash = stored_password.split(":")
+            hash_obj = hashlib.sha256((plain_password + salt).encode())
+            return hash_obj.hexdigest() == stored_hash
+        # Fallback: Check if it's an old plain-text password
+        return plain_password == stored_password
+    except Exception:
+        return False
+
+# --- Updated Login API ---
 @app.post("/api/login")
 async def login(data: dict, db: AsyncSession = Depends(get_db)):
     username = data.get("username")
     password = data.get("password")
     
-    # Query user from DB
     result = await db.execute(select(models.User).where(models.User.username == username))
     user = result.scalars().first()
     
-    # Simple verification (For demo: in production use passlib.hash)
-    if not user or user.password_hash != password:
+    if not user or not verify_password(password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Force change if they are still using the default plain-text password
+    requires_change = (password == "password123")
     
     return {
         "id": user.id,
         "username": user.username,
-        "role": user.role
+        "role": user.role,
+        "requiresPasswordChange": requires_change 
     }
+
+# --- New API: Change Password ---
+@app.post("/api/users/change-password")
+async def change_password(data: dict, db: AsyncSession = Depends(get_db)):
+    user_id = data.get("user_id")
+    new_password = data.get("new_password")
+    
+    result = await db.execute(select(models.User).where(models.User.id == user_id))
+    user = result.scalars().first()
+    
+    if user:
+        user.password_hash = get_password_hash(new_password)
+        await db.commit()
+        return {"status": "success"}
+    raise HTTPException(status_code=404, detail="User not found")
 
 @app.get("/api/users")
 async def get_users(db: AsyncSession = Depends(get_db)):
@@ -374,7 +412,7 @@ async def create_user(data: dict, db: AsyncSession = Depends(get_db)):
     # 2. Create new user with hierarchy link
     new_user = models.User(
         username=username,
-        password_hash=password, 
+        password_hash=get_password_hash("password123"),
         role=role,
         parent_id=parent_id 
     )

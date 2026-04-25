@@ -5,7 +5,7 @@ import api from '../api';
 const AddStaffModal = ({ isOpen, onClose, onStaffAdded }) => {
   const [formData, setFormData] = useState({
     username: '',
-    password: '',
+    password: 'password123',
     role: 'user',
     parent_id: ''
   });
@@ -81,9 +81,9 @@ const AddStaffModal = ({ isOpen, onClose, onStaffAdded }) => {
             <div className="relative">
               <Lock className="absolute left-4 top-3.5 text-slate-300" size={18} />
               <input 
-                type="password" required
+                type="text" required
                 className="w-full bg-slate-50 border-none rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-600 transition-all"
-                placeholder="••••••••"
+                readOnly
                 value={formData.password}
                 onChange={e => setFormData({...formData, password: e.target.value})}
               />

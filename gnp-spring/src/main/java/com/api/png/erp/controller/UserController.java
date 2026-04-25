@@ -39,6 +39,12 @@ public class UserController {
         return mapToTree(user);
     }
 
+    @GetMapping("/{id}")
+    public User getUser(@PathVariable Integer id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
     private UserTreeResponse mapToTree(User user) {
         UserTreeResponse node = new UserTreeResponse();
         node.setId(user.getId());

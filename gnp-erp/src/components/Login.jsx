@@ -1,20 +1,38 @@
 import React, { useState } from 'react';
 import { Lock, User } from 'lucide-react';
 import api from '../api';
+import ChangePassword from './ChangePassword';
 
 const Login = ({ onLoginSuccess }) => {
   const [creds, setCreds] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
 
+  const [pendingUser, setPendingUser] = useState(null);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await api.post('/login', creds);
-      onLoginSuccess(res.data); // Passes user object to App.jsx
+      
+      if (res.data.requiresPasswordChange) {
+        // Don't log them in fully yet, show the change screen
+        setPendingUser(res.data);
+      } else {
+        onLoginSuccess(res.data);
+      }
     } catch (err) {
       setError("Invalid username or password");
     }
   };
+
+  if (pendingUser) {
+    return (
+      <ChangePassword 
+        userId={pendingUser.id} 
+        onSuccess={() => onLoginSuccess(pendingUser)} 
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">

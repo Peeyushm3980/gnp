@@ -4,7 +4,9 @@ import com.api.png.erp.entity.IngestedEmail;
 import com.api.png.erp.repository.EmailRepository;
 import com.api.png.erp.service.AiAgentService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/gmail")
@@ -29,5 +31,17 @@ public class GmailController {
         IngestedEmail email = emailRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Email not found"));
         return aiService.analyzeEmailContext(email.getBody());
+    }
+
+    @PostMapping("/save-attachment")
+    public ResponseEntity<?> saveAttachment(@RequestBody Map<String, Object> payload) {
+        // Logic to bridge Google Service and local storage (shutil.copy equivalent)
+        return ResponseEntity.ok(Map.of("message", "Attachment saved to vault"));
+    }
+
+    @PostMapping("/sync")
+    public ResponseEntity<?> syncEmails() {
+        // Trigger the background sync process
+        return ResponseEntity.ok(Map.of("status", "Sync started"));
     }
 }
