@@ -41,12 +41,13 @@ python main.py
 
 
 ## Frontend Execution (React)
+cd gnp-erp
+npm install
+npm run dev
 
 Tutorial:
 https://youtu.be/Z9Mni83IK5o
 
 
-cd gnp-erp
-npm install
-npm run dev
+
 
