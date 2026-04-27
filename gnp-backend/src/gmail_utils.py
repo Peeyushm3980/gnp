@@ -14,29 +14,24 @@ SCOPES = [
 ]
 
 def get_gmail_service():
-    """
-    Authenticates the user and returns a Gmail API service instance.
-    Maintains a token.json file for persistent background access.
-    """
     creds = None
-    # The file token.json stores the user's access and refresh tokens.
-    # It is created automatically when the authorization flow completes for the first time.
+    # The file token.json stores the user's access and refresh tokens
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
+            # This line is the "Automatic" fix. It uses the refresh token 
+            # to get a new access token without a popup.
             creds.refresh(Request())
         else:
-            # Ensure credentials.json (from Google Cloud Console) is in your root directory
-            if not os.path.exists('credentials.json'):
-                raise FileNotFoundError("credentials.json not found. Please download it from Google Cloud Console.")
-                
+            # This should only happen ONCE during initial setup.
+            # On a headless server, you cannot run this part easily.
             flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
             
-        # Save the credentials for the next run to ensure background sync works
+        # Save the credentials for the next run
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
 
