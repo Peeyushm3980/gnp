@@ -1,3 +1,7 @@
 gnp-backend/token.json
 gnp-backend/credentials.json
 /gnp-backend/uploads
+/gnp-backend/src/uploads
+gnp-backend/credentials.json
+gnp-backend/src/credentials.json
+gnp-backend/src/token.json
