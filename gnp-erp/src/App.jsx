@@ -11,6 +11,7 @@ import UserManagement from './components/UserManagement';
 import ThemeSettings from './components/ThemeSettings';
 import StaffHierarchy from './components/StaffHierarchy';
 import GmailInbox from './components/GmailInbox';
+import ChangePassword from './components/ChangePassword';
 import { 
   LayoutDashboard, FolderOpen, TicketCheck, 
   Users, Handshake, FilePieChart, Menu, 
@@ -44,7 +45,8 @@ function App() {
     { name: 'CRM', icon: Handshake },
     { name: 'Accounts', icon: FilePieChart },
     { name: 'Staff Tracker', icon: MapPin },
-    { name: 'Users', icon: Users, adminOnly: true }
+    { name: 'Users', icon: Users, adminOnly: true },
+    { name: 'Security', icon: ShieldCheck }
   ].filter(item => !item.adminOnly || user.role === 'admin');
 
   const handleLogout = () => {
@@ -64,6 +66,16 @@ function App() {
       case 'Accounts': return <FirmAccounts />;
       case 'Staff Tracker': return <StaffTracker />;
       case 'Users': return <UserManagement />;
+      case 'Security': 
+      return (
+        <ChangePassword 
+          userId={user.id} 
+          onSuccess={() => {
+            alert("Password updated successfully!");
+            setCurrentPage('Projects'); // Redirect back to dashboard
+          }} 
+        />
+      );
       default: return <div className="p-20 text-center text-slate-400">Under Development</div>;
     }
   };

@@ -24,7 +24,7 @@ const ChangePassword = ({ userId, onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div className="h-full flex items-center justify-center p-6 animate-in fade-in duration-500">
       <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-xl p-10 border border-slate-100 text-center">
         <div className="bg-green-100 w-16 h-16 rounded-2xl flex items-center justify-center text-green-600 mx-auto mb-4">
           <ShieldCheck size={32} />
