@@ -15,7 +15,7 @@ from database import get_db, engine, Base
 from gmail_utils import download_attachment, get_gmail_service, parse_message_parts
 import models, schemas
 from fastapi.middleware.cors import CORSMiddleware
-
+from auth import create_access_token, get_current_user
 
 app = FastAPI(title="G&P ERP Backend")
 
@@ -52,7 +52,8 @@ async def upload_document(
     is_public: bool = Form(True), # NEW: Capture toggle state
     expiry_date: str = Form(None),   # Changed to Form
     category: str = Form(...),       # Changed to Form
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user)
 ):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
     with open(file_path, "wb") as buffer:
@@ -80,7 +81,8 @@ async def upload_document(
     return {"message": "File uploaded locally and record saved to Postgres"}
 
 @app.patch("/api/documents/{doc_id}/visibility")
-async def toggle_visibility(doc_id: int, is_public: bool, db: AsyncSession = Depends(get_db)):
+async def toggle_visibility(doc_id: int, is_public: bool, db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user)):
     result = await db.execute(select(models.Document).where(models.Document.id == doc_id))
     doc = result.scalars().first()
     doc.is_public = is_public
@@ -124,7 +126,8 @@ async def create_lead(lead: schemas.ClientLeadCreate, db: AsyncSession = Depends
 
 # --- DOCUMENT VAULT (GET) ---
 @app.get("/api/documents")
-async def get_documents(user_id: int, db: AsyncSession = Depends(get_db)):
+async def get_documents(user_id: int, db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user)):
     # 1. Get all users in this user's sub-tree (subordinates)
     async def get_subordinate_ids(uid):
         res = await db.execute(select(models.User.id).where(models.User.parent_id == uid))
@@ -199,7 +202,8 @@ async def reassign_task(task_id: int, payload: dict, db: AsyncSession = Depends(
     await db.refresh(db_task)
     return db_task
 @app.get("/api/documents/file/{document_id}")
-async def get_file(document_id: int, action: str = "view", db: AsyncSession = Depends(get_db)):
+async def get_file(document_id: int, action: str = "view", db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user)):
     # 1. Fetch document record from Postgres
     result = await db.execute(select(models.Document).filter(models.Document.id == document_id))
     db_doc = result.scalar_one_or_none()
@@ -352,11 +356,13 @@ async def login(data: dict, db: AsyncSession = Depends(get_db)):
     # Force change if they are still using the default plain-text password
     requires_change = (password == "password123")
     
+    token = create_access_token(data={"sub": user.username})
     return {
         "id": user.id,
         "username": user.username,
         "role": user.role,
-        "requiresPasswordChange": requires_change 
+        "requiresPasswordChange": requires_change ,
+        "access_token": token, "token_type": "bearer"
     }
 
 # --- New API: Change Password ---
@@ -510,7 +516,8 @@ async def delete_lead(lead_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/api/users/hierarchy/{user_id}", response_model=schemas.UserTreeResponse)
-async def get_user_hierarchy(user_id: int, db: AsyncSession = Depends(get_db)):
+async def get_user_hierarchy(user_id: int, db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user)):
     # Fetch user and their subordinates recursively
     # Note: In production, consider using a CTE for deep trees
     async def build_tree(current_user_id):
@@ -537,7 +544,7 @@ async def get_user_hierarchy(user_id: int, db: AsyncSession = Depends(get_db)):
     return await build_tree(user_id)
 
 @app.post("/api/gmail/sync")
-async def sync_gmail_inbox(db: AsyncSession = Depends(get_db)):
+async def sync_gmail_inbox(current_user: str = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     service = get_gmail_service() # Uses your existing OAuth logic
     
     # Search for last 7 days of emails

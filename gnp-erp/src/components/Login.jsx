@@ -18,6 +18,7 @@ const Login = ({ onLoginSuccess }) => {
         // Don't log them in fully yet, show the change screen
         setPendingUser(res.data);
       } else {
+        localStorage.setItem('user', JSON.stringify(res.data));
         onLoginSuccess(res.data);
       }
     } catch (err) {
